@@ -1,56 +1,71 @@
-# Welcome to your Expo app 👋
+# Daytona Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App móvil de venta de mostrador para **Daytona Repuestos Automotor**.
+Trabajo para Laboratorio 2 — Aplicaciones Móviles.
 
-## Get started
+Consume la API real del sistema de gestión Daytona (ASP.NET Web API +
+SQL Server) y permite registrar una venta completa desde el celular:
+buscar repuestos, armar el carrito, elegir tipo de cliente y descuento,
+confirmar, y consultar el historial.
 
-1. Install dependencies
+## Qué usa de cada clase
 
-   ```bash
-   npm install
-   ```
+| Clase | Contenido | Dónde está en la app |
+|---|---|---|
+| 1 | Expo Router, navegación Stack, styled-components, ThemeProvider, parámetros entre pantallas | `app/_layout.tsx`, `components/ui.tsx`, `lib/theme.ts`, `ventas/[id].tsx` |
+| 2 | TextInput con validación, TouchableOpacity, ScrollView, FlatList con datos de API, iconos | `app/index.tsx` (login), `venta/index.tsx` (buscador), `venta/carrito.tsx` |
+| 4 | TanStack Query: `useQuery`, `useMutation`, `queryKey`, caché, invalidación | `venta/index.tsx`, `venta/confirmar.tsx`, `ventas/index.tsx` |
+| 4 | Zustand: stores globales con suscripción selectiva | `lib/store/auth.ts`, `lib/store/carrito.ts`, `lib/store/venta.ts` |
 
-2. Start the app
+## Pantallas
 
-   ```bash
-   npx expo start
-   ```
+1. **Login** — correo y contraseña, mostrar/ocultar clave, recuperar contraseña.
+2. **Buscador** — busca en el catálogo con `useQuery`; cada resultado se agrega al carrito.
+3. **Carrito** — cantidades, tipo de cliente (Público / Mecánico), descuento, total.
+4. **Confirmar** — resumen y POST de la venta con `useMutation`.
+5. **Venta registrada** — número y total, con opción de nueva venta.
+6. **Historial** — lista de ventas y detalle por ruta dinámica.
 
-In the output, you'll find options to open the app in a
+## Por qué Zustand
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+El carrito se lee y escribe desde tres pantallas que no son padre e hijo:
+el buscador agrega y muestra el badge, el carrito edita, la confirmación
+lo vacía. Pasarlo por props sería el prop drilling que se vio en clase.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Cómo correrla
 
-## Get a fresh project
+Requiere la API de Daytona corriendo en `http://localhost:52954`.
 
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+npm install
+npx expo start --web
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Para probar desde un celular en la misma red, cambiar `API_BASE` en
+`src/lib/api.ts` por la IP de la PC y configurar IIS Express para que
+escuche en esa IP.
 
-### Other setup steps
+## Estructura
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```
+src/
+  app/              pantallas (expo-router)
+    _layout.tsx     Stack + QueryClientProvider + ThemeProvider
+    index.tsx       login
+    recuperar.tsx   recuperar contraseña
+    venta/          buscador, carrito, confirmar, confirmación
+    ventas/         historial y detalle
+  components/       ui (styled-components), filas de lista, marca
+  lib/
+    api.ts          URL y fetch con token
+    theme.ts        colores de Daytona
+    tipos.ts        formas de la API
+    useSesion.ts    protección de rutas
+    store/          auth, carrito, venta (Zustand)
+```
 
-## Learn more
+## Lo que queda fuera
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Presupuestos, cuenta corriente, compras y reportes existen en el sistema
+web pero no en la app: el alcance fue un solo proceso completo.
+"Recordarme" requiere persistencia segura (`expo-secure-store`), pendiente.
