@@ -1,7 +1,7 @@
 # Daytona Mobile
 
 App móvil de venta de mostrador para **Daytona Repuestos Automotor**, un
-negocio real de repuestos de Córdoba. Consume la API del sistema de gestión
+negocio de repuestos de Córdoba. Consume la API del sistema de gestión
 Daytona (ASP.NET Web API + SQL Server) y permite registrar una venta
 completa desde el celular.
 
@@ -69,21 +69,6 @@ Proyecto para **Laboratorio 2 — Aplicaciones Móviles**.
 - **Paginación del historial** con `useInfiniteQuery`
 - Presupuestos, compras y reportes existen en el sistema web pero quedan
   fuera del alcance de la app
-
----
-
-## Qué usa de cada clase
-
-| Clase | Contenido | Dónde está |
-|---|---|---|
-| 1 | Expo Router, Stack, styled-components, ThemeProvider, parámetros entre pantallas | `app/_layout.tsx`, `components/ui.tsx`, `lib/theme.ts`, `ventas/[id].tsx` |
-| 2 | TextInput con validación, TouchableOpacity, ScrollView, FlatList con datos de API, iconos | `app/index.tsx`, `venta/index.tsx`, `venta/carrito.tsx` |
-| 4 | TanStack Query: `useQuery`, `useMutation`, `queryKey`, caché, invalidación | `venta/index.tsx`, `venta/confirmar.tsx`, `ventas/index.tsx` |
-| 4 | Zustand: stores globales con suscripción selectiva | `lib/store/auth.ts`, `lib/store/carrito.ts`, `lib/store/venta.ts` |
-
-**Por qué Zustand:** el carrito se lee y escribe desde tres pantallas que no
-son padre e hijo. El buscador agrega y muestra el badge, el carrito edita, la
-confirmación lo vacía. Pasarlo por props sería el prop drilling visto en clase.
 
 ---
 
