@@ -1,11 +1,26 @@
 // lib/api.ts
-// UNICO lugar donde vive la direccion del backend, igual que config.js
-// en el frontend web. Para probar desde el celular por red local se cambia
-// solo esta linea por la IP de la PC: http://192.168.x.x:52954/api/
+// La direccion del backend se deduce sola: Metro sabe desde que host esta
+// sirviendo la app (localhost en web, la IP de la PC en el celular), y la
+// API vive en esa misma maquina en el puerto 52954. Asi funciona en web y
+// en el celular sin tocar nada, y si cambia el WiFi se adapta solo.
 
+import Constants from 'expo-constants';
 import { useAuthStore } from './store/auth';
 
-export const API_BASE = 'http://localhost:52954/api/';
+const PUERTO_API = 52954;
+
+function resolverApiBase(): string {
+  // hostUri viene como "192.168.0.70:8081" o "localhost:8081"
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const host = hostUri.split(':')[0];
+    return `http://${host}:${PUERTO_API}/api/`;
+  }
+  // Sin Metro (build de produccion): valor fijo, cambiar al publicar
+  return 'http://localhost:52954/api/';
+}
+
+export const API_BASE = resolverApiBase();
 
 // Envuelve fetch agregando el token de sesion. Todas las llamadas a la
 // API salvo el login pasan por aca.
@@ -20,7 +35,6 @@ export async function apiFetch<T>(ruta: string, opciones: RequestInit = {}): Pro
 
   const respuesta = await fetch(API_BASE + ruta, { ...opciones, headers });
 
-  // Sesion vencida: se limpia y la pantalla decide que hacer
   if (respuesta.status === 401) {
     useAuthStore.getState().logout();
     throw new Error('La sesión venció. Volvé a iniciar sesión.');

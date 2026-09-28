@@ -1,36 +1,104 @@
 # Daytona Mobile
 
-App móvil de venta de mostrador para **Daytona Repuestos Automotor**.
-Trabajo para Laboratorio 2 — Aplicaciones Móviles.
+App móvil de venta de mostrador para **Daytona Repuestos Automotor**, un
+negocio real de repuestos de Córdoba. Consume la API del sistema de gestión
+Daytona (ASP.NET Web API + SQL Server) y permite registrar una venta
+completa desde el celular.
 
-Consume la API real del sistema de gestión Daytona (ASP.NET Web API +
-SQL Server) y permite registrar una venta completa desde el celular:
-buscar repuestos, armar el carrito, elegir tipo de cliente y descuento,
-confirmar, y consultar el historial.
+Proyecto para **Laboratorio 2 — Aplicaciones Móviles**.
+
+---
+
+## 👥 Integrantes
+
+- Sofía Ludueña
+- Hernán Pereyra
+- Noelia Pereyra
+
+---
+
+## ✅ Features implementadas
+
+**Autenticación**
+- Login con correo y contraseña contra la API real (JWT)
+- Mostrar / ocultar contraseña
+- Validación de correo mientras se escribe
+- Mensajes distintos para credenciales incorrectas y falta de conexión
+- Recuperar contraseña (registra la solicitud en el backend)
+- Diseño responsive: una columna en celular, dos zonas en tablet
+
+**Venta de mostrador**
+- Buscador de repuestos en el catálogo, con búsqueda diferida (debounce)
+- Resultados con código, marca, descripción, stock con semáforo y precio
+- Agregar al carrito con validación de stock
+- Badge con la cantidad de ítems en la cabecera
+- Carrito con cantidades editables y quitar ítems
+- Selección de tipo de cliente: Público / Mecánico
+- Descuentos configurables leídos de la API (al mecánico se le aplica solo)
+- Cálculo de subtotal, descuento y total
+- Confirmación con resumen y registro real de la venta en el sistema
+- Pantalla de venta registrada con número de comprobante
+
+**Historial**
+- Lista de ventas ordenadas de la más nueva a la más vieja
+- Ventas anuladas diferenciadas visualmente
+- Detalle de cada venta por ruta dinámica
+- Pull-to-refresh
+
+**Infraestructura**
+- Sesión global con Zustand
+- Carrito y opciones de venta en Zustand (compartidos entre pantallas)
+- Todas las llamadas a la API con TanStack Query (`useQuery` / `useMutation`)
+- Invalidación de caché al registrar una venta
+- Protección de rutas: sin sesión, redirige al login
+- Funciona en web y en celular físico (Expo Go) con el mismo comando: la
+  app detecta sola la dirección del backend
+- Manejo de sesión vencida
+- Tema con la identidad de Daytona en styled-components
+
+---
+
+## ⏳ Features pendientes
+
+- **"Recordarme"**: la casilla existe pero requiere persistencia segura
+  (`expo-secure-store`); hoy la sesión dura mientras la app está abierta
+- **Selección de cliente registrado**: hoy se usan los clientes internos
+  (Consumidor Final / Mecánico Mostrador); falta poder elegir uno de la lista
+- **Venta a cuenta corriente**: la API lo soporta, la app solo registra contado
+- **Código OTP en recuperar contraseña**: requiere endpoint en el backend
+- **Paginación del historial** con `useInfiniteQuery`
+- Presupuestos, compras y reportes existen en el sistema web pero quedan
+  fuera del alcance de la app
+
+---
 
 ## Qué usa de cada clase
 
-| Clase | Contenido | Dónde está en la app |
+| Clase | Contenido | Dónde está |
 |---|---|---|
-| 1 | Expo Router, navegación Stack, styled-components, ThemeProvider, parámetros entre pantallas | `app/_layout.tsx`, `components/ui.tsx`, `lib/theme.ts`, `ventas/[id].tsx` |
-| 2 | TextInput con validación, TouchableOpacity, ScrollView, FlatList con datos de API, iconos | `app/index.tsx` (login), `venta/index.tsx` (buscador), `venta/carrito.tsx` |
+| 1 | Expo Router, Stack, styled-components, ThemeProvider, parámetros entre pantallas | `app/_layout.tsx`, `components/ui.tsx`, `lib/theme.ts`, `ventas/[id].tsx` |
+| 2 | TextInput con validación, TouchableOpacity, ScrollView, FlatList con datos de API, iconos | `app/index.tsx`, `venta/index.tsx`, `venta/carrito.tsx` |
 | 4 | TanStack Query: `useQuery`, `useMutation`, `queryKey`, caché, invalidación | `venta/index.tsx`, `venta/confirmar.tsx`, `ventas/index.tsx` |
 | 4 | Zustand: stores globales con suscripción selectiva | `lib/store/auth.ts`, `lib/store/carrito.ts`, `lib/store/venta.ts` |
 
+**Por qué Zustand:** el carrito se lee y escribe desde tres pantallas que no
+son padre e hijo. El buscador agrega y muestra el badge, el carrito edita, la
+confirmación lo vacía. Pasarlo por props sería el prop drilling visto en clase.
+
+---
+
 ## Pantallas
 
-1. **Login** — correo y contraseña, mostrar/ocultar clave, recuperar contraseña.
-2. **Buscador** — busca en el catálogo con `useQuery`; cada resultado se agrega al carrito.
-3. **Carrito** — cantidades, tipo de cliente (Público / Mecánico), descuento, total.
-4. **Confirmar** — resumen y POST de la venta con `useMutation`.
-5. **Venta registrada** — número y total, con opción de nueva venta.
-6. **Historial** — lista de ventas y detalle por ruta dinámica.
+1. **Login** — `app/index.tsx`
+2. **Recuperar contraseña** — `app/recuperar.tsx`
+3. **Buscador** — `app/venta/index.tsx`
+4. **Carrito** — `app/venta/carrito.tsx`
+5. **Confirmar venta** — `app/venta/confirmar.tsx`
+6. **Venta registrada** — `app/venta/confirmacion.tsx`
+7. **Historial** — `app/ventas/index.tsx`
+8. **Detalle de venta** — `app/ventas/[id].tsx`
 
-## Por qué Zustand
-
-El carrito se lee y escribe desde tres pantallas que no son padre e hijo:
-el buscador agrega y muestra el badge, el carrito edita, la confirmación
-lo vacía. Pasarlo por props sería el prop drilling que se vio en clase.
+---
 
 ## Cómo correrla
 
@@ -41,20 +109,22 @@ npm install
 npx expo start --web
 ```
 
-Para probar desde un celular en la misma red, cambiar `API_BASE` en
-`src/lib/api.ts` por la IP de la PC y configurar IIS Express para que
-escuche en esa IP.
+Con **w** se abre en el navegador; escaneando el QR con Expo Go (SDK 55) se
+abre en el celular. La configuración de red para que el celular llegue al
+backend está en `CELULAR.md`.
+
+---
+
+## Stack
+
+Expo SDK 55 · expo-router · React Native 0.83 · TypeScript ·
+@tanstack/react-query 5 · zustand 5 · styled-components 6 · @expo/vector-icons
 
 ## Estructura
 
 ```
 src/
   app/              pantallas (expo-router)
-    _layout.tsx     Stack + QueryClientProvider + ThemeProvider
-    index.tsx       login
-    recuperar.tsx   recuperar contraseña
-    venta/          buscador, carrito, confirmar, confirmación
-    ventas/         historial y detalle
   components/       ui (styled-components), filas de lista, marca
   lib/
     api.ts          URL y fetch con token
@@ -63,9 +133,3 @@ src/
     useSesion.ts    protección de rutas
     store/          auth, carrito, venta (Zustand)
 ```
-
-## Lo que queda fuera
-
-Presupuestos, cuenta corriente, compras y reportes existen en el sistema
-web pero no en la app: el alcance fue un solo proceso completo.
-"Recordarme" requiere persistencia segura (`expo-secure-store`), pendiente.
