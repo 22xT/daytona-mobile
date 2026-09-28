@@ -15,8 +15,21 @@ export interface ItemCarrito {
   StockDisponible: number;
 }
 
+function nuevoToken(): string {
+  // crypto.randomUUID existe en web y en RN moderno; fallback por las dudas
+  const c = (globalThis as any).crypto;
+  if (c?.randomUUID) return c.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
+    const r = (Math.random() * 16) | 0;
+    return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 interface CarritoStore {
   items: ItemCarrito[];
+  // Token unico de la operacion en curso. Se manda con la venta: si el
+  // POST se repite, el servidor devuelve la misma venta en vez de crear otra.
+  tokenOperacion: string;
 
   agregar: (item: Omit<ItemCarrito, 'Cantidad'>) => { ok: boolean; motivo?: string };
   quitar: (idRepuesto: number) => void;
@@ -30,6 +43,7 @@ interface CarritoStore {
 
 export const useCarritoStore = create<CarritoStore>((set, get) => ({
   items: [],
+  tokenOperacion: nuevoToken(),
 
   agregar: (item) => {
     const existente = get().items.find((i) => i.IdRepuesto === item.IdRepuesto);
@@ -73,7 +87,8 @@ export const useCarritoStore = create<CarritoStore>((set, get) => ({
     return { ok: true };
   },
 
-  vaciar: () => set({ items: [] }),
+  // Al vaciar nace un token nuevo: la proxima venta es otra operacion
+  vaciar: () => set({ items: [], tokenOperacion: nuevoToken() }),
 
   cantidadItems: () => get().items.reduce((s, i) => s + i.Cantidad, 0),
   subtotal: () => get().items.reduce((s, i) => s + i.Cantidad * i.PrecioUnitario, 0),

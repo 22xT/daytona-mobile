@@ -95,7 +95,7 @@ export default function Buscador() {
       {/* Cabecera con el badge del carrito y el usuario */}
       <Stack.Screen
         options={{
-          title: 'Nueva venta',
+          title: 'Venta',
           headerRight: () => (
             <View style={estilos.headerDerecha}>
               <TouchableOpacity onPress={() => router.push('/ventas')} hitSlop={8} accessibilityLabel="Historial">

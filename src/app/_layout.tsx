@@ -33,7 +33,7 @@ export default function RootLayout() {
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="recuperar" options={{ headerShown: false }} />
-          <Stack.Screen name="venta/index" options={{ title: 'Nueva venta' }} />
+          <Stack.Screen name="venta/index" options={{ title: 'Venta' }} />
           <Stack.Screen name="venta/carrito" options={{ title: 'Carrito' }} />
           <Stack.Screen name="venta/confirmar" options={{ title: 'Confirmar venta' }} />
           <Stack.Screen name="venta/confirmacion" options={{ title: 'Venta registrada', headerBackVisible: false }} />

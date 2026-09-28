@@ -29,6 +29,7 @@ export default function Confirmar() {
 
   const items = useCarritoStore((s) => s.items);
   const vaciar = useCarritoStore((s) => s.vaciar);
+  const tokenOperacion = useCarritoStore((s) => s.tokenOperacion);
   const tipoCliente = useVentaStore((s) => s.tipoCliente);
   const descuento = useVentaStore((s) => s.descuento);
   const resetVenta = useVentaStore((s) => s.reset);
@@ -58,6 +59,7 @@ export default function Confirmar() {
         method: 'POST',
         body: JSON.stringify({
           IdCliente: clienteInterno!.Id,
+          TokenOperacion: tokenOperacion,
           PorcentajeDescuento: descuento,
           FormaPago: 'Contado',
           TipoCliente: tipoCliente,

@@ -40,7 +40,7 @@ export default function Confirmacion() {
 
           <Boton onPress={() => router.replace('/venta')}>
             <Ionicons name="add-circle-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={estilos.btnTexto}>NUEVA VENTA</Text>
+            <Text style={estilos.btnTexto}>VENTA</Text>
           </Boton>
           <View style={{ height: 10 }} />
           <Boton variante="secundario" onPress={() => router.replace('/ventas')}>Ver historial</Boton>
