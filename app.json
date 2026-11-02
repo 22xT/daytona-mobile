@@ -18,18 +18,37 @@
       "adaptiveIcon": {
         "backgroundColor": "#001F3F"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.daytona.mobile",
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "bundler": "metro",
       "output": "static"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Daytona usa la cámara para leer el código de barras de los repuestos.",
+          "recordAudioAndroid": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7306f85c-d7ca-4896-a3b2-27e0a67487b8"
+      }
+    },
+    "owner": "hernan22xt"
   }
 }

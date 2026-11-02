@@ -1,14 +1,9 @@
-// components/Marca.tsx
-// La identidad de Daytona: logo tipografico con un trazo dinamico en rojo.
-// Referencia automotriz sutil, sin caer en lo "racing". Se usa en el login
-// y puede reutilizarse en cabeceras.
-
 import { View, Text, StyleSheet } from 'react-native';
 import { theme } from '../lib/theme';
 
 interface Props {
-  claro?: boolean;     // version para fondo oscuro
-  compacto?: boolean;  // sin la linea "sistema de gestion"
+  claro?: boolean;
+  compacto?: boolean;
 }
 
 export function Marca({ claro = false, compacto = false }: Props) {
@@ -18,7 +13,6 @@ export function Marca({ claro = false, compacto = false }: Props) {
   return (
     <View style={estilos.contenedor} accessibilityRole="header" accessibilityLabel="Daytona Repuestos Automotor">
       <View style={estilos.fila}>
-        {/* Trazo dinamico: tres lineas que se acortan, como estelas de velocidad */}
         <View style={estilos.trazos}>
           <View style={[estilos.trazo, { width: 22 }]} />
           <View style={[estilos.trazo, { width: 15 }]} />

@@ -1,9 +1,3 @@
-// app/recuperar.tsx — Recuperar contraseña
-// Usa el endpoint SolicitudReset que YA EXISTE en el backend (es el mismo
-// que usa el login web). La solicitud queda registrada y un Administrador
-// la procesa desde el sistema. No hay OTP ni envio de mail automatico:
-// eso queda como TODO cuando exista en el backend.
-
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -99,9 +93,6 @@ export default function Recuperar() {
             )}
           </Tarjeta>
 
-          {/* TODO: cuando el backend tenga OTP y cambio de clave desde la app,
-              agregar aca los pasos "Código de 6 dígitos" y "Nueva contraseña".
-              Hoy el reset lo procesa un Administrador desde el sistema web. */}
         </ScrollView>
       </KeyboardAvoidingView>
     </Pantalla>

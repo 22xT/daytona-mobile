@@ -1,7 +1,3 @@
-// lib/theme.ts
-// Los colores de Daytona en un solo lugar. Se usa desde StyleSheet
-// importando estas constantes, y desde styled-components via ThemeProvider.
-
 export const theme = {
   colors: {
     navy: '#001F3F',

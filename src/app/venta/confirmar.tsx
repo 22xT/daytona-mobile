@@ -1,9 +1,4 @@
-// app/venta/confirmar.tsx — Confirmar venta
-// Resumen final y el POST a la API con useMutation de TanStack Query
-// (clase 4). Al confirmar, invalida la cache del historial y vacia el
-// carrito del store de Zustand.
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -14,11 +9,11 @@ import { useCarritoStore } from '../../lib/store/carrito';
 import { useVentaStore } from '../../lib/store/venta';
 import { Pantalla, Tarjeta, Boton, TextoError } from '../../components/ui';
 import { useSesion } from '../../lib/useSesion';
+import { Cobro, MedioPago, PagoEnCurso, estadoCobro, pagosARegistrar } from '../../components/Cobro';
 
 interface Cliente { Id: number; Dni: string | null; Nombre: string; Apellido: string; }
-interface RespuestaVenta { IdVenta: number; Total: number; Descuento: number; Entrega: number; SaldoGenerado: number; }
+interface RespuestaVenta { IdVenta: number; Total: number; Descuento: number; Entrega: number; SaldoGenerado: number; Comision?: number; }
 
-// Clientes internos del sistema, identificados por DNI
 const DNI_CONSUMIDOR_FINAL = '00000000';
 const DNI_MECANICO_MOSTRADOR = '00000001';
 
@@ -36,7 +31,6 @@ export default function Confirmar() {
 
   const [error, setError] = useState('');
 
-  // El Id del cliente interno se lee de la lista una vez y queda en cache.
   const { data: clientes, isLoading: cargandoClientes } = useQuery({
     queryKey: ['clientes'],
     queryFn: () => apiFetch<Cliente[]>('Cliente'),
@@ -51,8 +45,24 @@ export default function Confirmar() {
   const total = subtotal - montoDescuento;
   const cantidadItems = items.reduce((s, i) => s + i.Cantidad, 0);
 
-  // useMutation: para operaciones que escriben. No se ejecuta sola,
-  // se dispara con mutate(). Distinto de useQuery, que es para leer.
+  const { data: medios } = useQuery({
+    queryKey: ['mediosPago'],
+    queryFn: () => apiFetch<MedioPago[]>('MedioPago'),
+    staleTime: 10 * 60_000,
+  });
+
+  const [pagos, setPagos] = useState<PagoEnCurso[]>([]);
+  const [pagosIniciados, setPagosIniciados] = useState(false);
+  useEffect(() => {
+    if (pagosIniciados || !medios) return;
+    const efe = medios.find((m) => m.Codigo === 'EFE');
+    if (efe) setPagos([{ IdMedioPago: efe.Id, Codigo: efe.Codigo, Nombre: efe.Nombre, ComisionPorc: efe.ComisionPorc,
+                         Monto: String(Math.round(total * 100) / 100) }]);
+    setPagosIniciados(true);
+  }, [medios]);
+
+  const cobro = estadoCobro(pagos, total);
+
   const registrar = useMutation({
     mutationFn: () =>
       apiFetch<RespuestaVenta>('Venta', {
@@ -61,13 +71,12 @@ export default function Confirmar() {
           IdCliente: clienteInterno!.Id,
           TokenOperacion: tokenOperacion,
           PorcentajeDescuento: descuento,
-          FormaPago: 'Contado',
+          Pagos: pagosARegistrar(pagos, total),
           TipoCliente: tipoCliente,
           Detalle: items.map((i) => ({ IdRepuesto: i.IdRepuesto, Cantidad: i.Cantidad, PrecioUnitario: i.PrecioUnitario })),
         }),
       }),
     onSuccess: (r) => {
-      // Hay una venta nueva y el stock cambio: se marcan esas caches como viejas
       queryClient.invalidateQueries({ queryKey: ['ventas'] });
       queryClient.invalidateQueries({ queryKey: ['busqueda'] });
       vaciar();
@@ -80,7 +89,7 @@ export default function Confirmar() {
     onError: (e: Error) => setError(e.message),
   });
 
-  const puedeConfirmar = items.length > 0 && !!clienteInterno && !registrar.isPending;
+  const puedeConfirmar = items.length > 0 && !!clienteInterno && cobro.ok && !registrar.isPending;
 
   if (items.length === 0) {
     return (
@@ -136,11 +145,18 @@ export default function Confirmar() {
               <Text style={[estilos.totalValor, { color: theme.colors.green }]}>−{moneda(montoDescuento)}</Text>
             </View>
           ) : null}
-          <View style={estilos.totalFila}><Text style={estilos.totalLabel}>Forma de pago</Text><Text style={estilos.totalValor}>Contado</Text></View>
           <View style={[estilos.totalFila, estilos.totalFinal]}>
             <Text style={estilos.totalFinalLabel}>TOTAL</Text>
             <Text style={estilos.totalFinalValor}>{moneda(total)}</Text>
           </View>
+        </Tarjeta>
+
+        <View style={{ height: 12 }} />
+
+        <Tarjeta>
+          <Text style={estilos.seccion}>COBRO</Text>
+          {medios ? <Cobro medios={medios} pagos={pagos} total={total} onChange={setPagos} />
+                  : <Text style={estilos.muted}>Cargando medios de pago…</Text>}
         </Tarjeta>
 
         {error ? (
@@ -158,7 +174,7 @@ export default function Confirmar() {
         <View style={{ height: 10 }} />
         <Boton variante="secundario" onPress={() => router.back()} disabled={registrar.isPending}>Volver al carrito</Boton>
 
-        <Text style={estilos.nota}>Al registrar se descuenta el stock y se genera el ingreso en caja.</Text>
+        <Text style={estilos.nota}>Al registrar se descuenta el stock. El efectivo entra a la caja (tiene que estar abierta) y lo electrónico a Mercado Pago.</Text>
       </ScrollView>
     </Pantalla>
   );

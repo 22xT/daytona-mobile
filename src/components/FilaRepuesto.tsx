@@ -1,7 +1,3 @@
-// components/FilaRepuesto.tsx
-// Una fila del buscador. Codigo, descripcion, stock con color segun
-// estado, precio, y el boton para agregar al carrito.
-
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../lib/theme';
@@ -10,8 +6,9 @@ import type { RepuestoPropio } from '../lib/tipos';
 
 interface Props {
   item: RepuestoPropio;
-  enCarrito: number;          // cuantas unidades ya estan en el carrito
+  enCarrito: number;
   onAgregar: (item: RepuestoPropio) => void;
+  onAbrir?: (item: RepuestoPropio) => void;
 }
 
 const estadoStock = {
@@ -20,14 +17,21 @@ const estadoStock = {
   SinStock: { color: theme.colors.red,    fondo: theme.colors.redSoft,    icono: 'close-circle' as const },
 };
 
-export function FilaRepuesto({ item, enCarrito, onAgregar }: Props) {
+export function FilaRepuesto({ item, enCarrito, onAgregar, onAbrir }: Props) {
   const e = estadoStock[item.EstadoStock] ?? estadoStock.SinStock;
   const sinStock = item.Stock <= 0;
   const disponible = item.Stock - enCarrito;
 
   return (
     <View style={estilos.fila}>
-      <View style={estilos.info}>
+      <TouchableOpacity
+        style={estilos.info}
+        onPress={() => onAbrir?.(item)}
+        disabled={!onAbrir}
+        testID={'repuesto-' + item.Id}
+        accessibilityRole="button"
+        accessibilityLabel={`Ver ficha de ${item.Descripcion}`}
+      >
         <View style={estilos.linea1}>
           <Text style={estilos.codigo}>{item.Codigo}</Text>
           {item.MarcaFabricante ? <Text style={estilos.marca}>{item.MarcaFabricante}</Text> : null}
@@ -44,7 +48,7 @@ export function FilaRepuesto({ item, enCarrito, onAgregar }: Props) {
             <Text style={estilos.enCarrito}>{enCarrito} en carrito</Text>
           ) : null}
         </View>
-      </View>
+      </TouchableOpacity>
 
       <View style={estilos.derecha}>
         <Text style={estilos.precio}>{moneda(item.PrecioDeVenta)}</Text>
@@ -55,6 +59,7 @@ export function FilaRepuesto({ item, enCarrito, onAgregar }: Props) {
           accessibilityRole="button"
           accessibilityLabel={`Agregar ${item.Descripcion} al carrito`}
           hitSlop={6}
+          testID={'agregar-' + item.Id}
         >
           <Ionicons name="add" size={22} color="#fff" />
         </TouchableOpacity>

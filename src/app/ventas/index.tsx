@@ -1,110 +1,108 @@
-// app/ventas/index.tsx — Historial de ventas
-// FlatList con useQuery (clase 2 + 4). Tocar una venta navega al detalle
-// con parametro de ruta (clase 1). Pull-to-refresh con refetch.
-
+import { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { apiFetch, moneda } from '../../lib/api';
+import { apiFetch } from '../../lib/api';
 import { theme } from '../../lib/theme';
 import { Pantalla } from '../../components/ui';
 import { useSesion } from '../../lib/useSesion';
+import { Pestanas, type Pestana } from '../../components/Pestanas';
+import { FilaVenta, type VentaResumen } from '../../components/FilaVenta';
+import { TAMANO_PAGINA, siguientePagina } from '../../lib/paginacion';
 
-interface Venta {
-  Id: number;
-  Fecha: string;
-  Cliente: string;
-  Total: number;
-  Estado: string;         // 'Activa' | 'Anulada'
-  Vendedor?: string;
-  PorcentajeDescuento?: number;
-}
+type Filtro = 'TODAS' | 'ACTIVAS' | 'ANULADAS';
 
-function fecha(v: string) {
-  const d = new Date(v);
-  return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-}
-function hora(v: string) {
-  const d = new Date(v);
-  return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-}
+const PESTANAS: Pestana<Filtro>[] = [
+  { id: 'TODAS', label: 'Todas' },
+  { id: 'ACTIVAS', label: 'Activas' },
+  { id: 'ANULADAS', label: 'Anuladas' },
+];
 
 export default function Historial() {
   useSesion();
   const router = useRouter();
+  const [filtro, setFiltro] = useState<Filtro>('TODAS');
 
-  const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
-    queryKey: ['ventas'],
-    queryFn: () => apiFetch<Venta[]>('Venta'),
-    // Las mas nuevas primero
-    select: (lista) => [...(lista ?? [])].sort((a, b) => b.Id - a.Id),
+  const {
+    data, isLoading, isError, error, refetch, isRefetching,
+    fetchNextPage, hasNextPage, isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['ventas', filtro],
+    queryFn: ({ pageParam }) =>
+      apiFetch<VentaResumen[]>(`Venta/Pagina?pagina=${pageParam}&tamano=${TAMANO_PAGINA}&estado=${filtro}`),
+    initialPageParam: 1,
+    getNextPageParam: (ultima, paginas) => siguientePagina(ultima ?? [], paginas),
   });
 
-  const ventas = data ?? [];
+  const ventas = data?.pages.flatMap((p) => p ?? []) ?? [];
+  const totalRegistros = Number(data?.pages[0]?.[0]?.TotalRegistros ?? 0);
 
-  if (isLoading) {
-    return (
-      <Pantalla>
-        <View style={estilos.centro}><ActivityIndicator size="large" color={theme.colors.navy} /></View>
-      </Pantalla>
-    );
+  function abrir(v: VentaResumen) {
+    router.push({
+      pathname: '/ventas/[id]',
+      params: { id: String(v.Id), fecha: v.Fecha, cliente: v.Cliente ?? '', total: String(v.Total), estado: v.Estado },
+    });
   }
 
-  if (isError) {
-    return (
-      <Pantalla>
-        <View style={estilos.centro}>
-          <Ionicons name="cloud-offline-outline" size={44} color={theme.colors.muted} />
-          <Text style={estilos.vacioTitulo}>No se pudo cargar</Text>
-          <Text style={estilos.vacioTexto}>{(error as Error)?.message}</Text>
-          <TouchableOpacity onPress={() => refetch()} style={estilos.reintentar}>
-            <Text style={estilos.reintentarTexto}>Reintentar</Text>
-          </TouchableOpacity>
-        </View>
-      </Pantalla>
+  function cargarMas() {
+    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+  }
+
+  let contenido;
+  if (isLoading) {
+    contenido = <View style={estilos.centro}><ActivityIndicator size="large" color={theme.colors.navy} /></View>;
+  } else if (isError) {
+    contenido = (
+      <View style={estilos.centro}>
+        <Ionicons name="cloud-offline-outline" size={44} color={theme.colors.muted} />
+        <Text style={estilos.vacioTitulo}>No se pudo cargar</Text>
+        <Text style={estilos.vacioTexto}>{(error as Error)?.message}</Text>
+        <TouchableOpacity onPress={() => refetch()} style={estilos.reintentar}>
+          <Text style={estilos.reintentarTexto}>Reintentar</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  } else {
+    contenido = (
+      <FlatList
+        data={ventas}
+        keyExtractor={(v) => String(v.Id)}
+        renderItem={({ item }) => <FilaVenta venta={item} onPress={abrir} />}
+        onEndReached={cargarMas}
+        onEndReachedThreshold={0.4}
+        refreshControl={<RefreshControl refreshing={isRefetching && !isFetchingNextPage} onRefresh={refetch} tintColor={theme.colors.navy} />}
+        contentContainerStyle={ventas.length === 0 ? { flex: 1 } : undefined}
+        ListHeaderComponent={
+          ventas.length > 0 ? (
+            <Text style={estilos.contador}>
+              Mostrando {ventas.length} de {totalRegistros} {totalRegistros === 1 ? 'venta' : 'ventas'}
+            </Text>
+          ) : null
+        }
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <ActivityIndicator style={{ marginVertical: 18 }} color={theme.colors.navy} />
+          ) : !hasNextPage && ventas.length > 0 ? (
+            <Text style={estilos.fin}>No hay más ventas</Text>
+          ) : null
+        }
+        ListEmptyComponent={
+          <View style={estilos.centro}>
+            <Ionicons name="receipt-outline" size={44} color={theme.colors.border} />
+            <Text style={estilos.vacioTitulo}>
+              {filtro === 'ANULADAS' ? 'No hay ventas anuladas' : 'Sin ventas todavía'}
+            </Text>
+          </View>
+        }
+      />
     );
   }
 
   return (
     <Pantalla>
-      <FlatList
-        data={ventas}
-        keyExtractor={(v) => String(v.Id)}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={theme.colors.navy} />}
-        contentContainerStyle={ventas.length === 0 ? { flex: 1 } : undefined}
-        ListEmptyComponent={
-          <View style={estilos.centro}>
-            <Ionicons name="receipt-outline" size={44} color={theme.colors.border} />
-            <Text style={estilos.vacioTitulo}>Sin ventas todavía</Text>
-          </View>
-        }
-        renderItem={({ item }) => {
-          const anulada = String(item.Estado).toLowerCase().includes('anul');
-          return (
-            <TouchableOpacity
-              style={[estilos.fila, anulada && estilos.filaAnulada]}
-              onPress={() => router.push({ pathname: '/ventas/[id]', params: { id: String(item.Id) } })}
-              accessibilityRole="button"
-              accessibilityLabel={`Venta ${item.Id}, ${moneda(item.Total)}`}
-            >
-              <View style={estilos.izq}>
-                <Text style={estilos.numero}>N° {String(item.Id).padStart(8, '0')}</Text>
-                <Text style={estilos.cliente} numberOfLines={1}>{item.Cliente}</Text>
-                <Text style={estilos.fecha}>{fecha(item.Fecha)} · {hora(item.Fecha)}</Text>
-              </View>
-              <View style={estilos.der}>
-                <Text style={[estilos.total, anulada && estilos.totalAnulada]}>{moneda(item.Total)}</Text>
-                {anulada ? (
-                  <View style={estilos.pillAnulada}><Text style={estilos.pillAnuladaTexto}>ANULADA</Text></View>
-                ) : (
-                  <Ionicons name="chevron-forward" size={18} color={theme.colors.muted} />
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        }}
-      />
+      <Pestanas pestanas={PESTANAS} activa={filtro} onChange={setFiltro} />
+      {contenido}
     </Pantalla>
   );
 }
@@ -115,16 +113,6 @@ const estilos = StyleSheet.create({
   vacioTexto: { fontSize: 13, color: theme.colors.muted, textAlign: 'center' },
   reintentar: { marginTop: 10, paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8, backgroundColor: theme.colors.accentSoft },
   reintentarTexto: { color: theme.colors.accent, fontWeight: '700' },
-
-  fila: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme.colors.card, padding: 14, borderBottomWidth: 1, borderBottomColor: theme.colors.border, gap: 12 },
-  filaAnulada: { opacity: 0.6 },
-  izq: { flex: 1, minWidth: 0 },
-  numero: { fontFamily: 'monospace', fontSize: 12, fontWeight: '700', color: theme.colors.navy, letterSpacing: 0.5 },
-  cliente: { fontSize: 14, color: theme.colors.text, marginTop: 3 },
-  fecha: { fontSize: 12, color: theme.colors.muted, marginTop: 2 },
-  der: { alignItems: 'flex-end', gap: 4 },
-  total: { fontSize: 17, fontWeight: '800', color: theme.colors.navy },
-  totalAnulada: { textDecorationLine: 'line-through', color: theme.colors.muted },
-  pillAnulada: { backgroundColor: theme.colors.redSoft, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  pillAnuladaTexto: { fontSize: 10, fontWeight: '700', color: theme.colors.red },
+  contador: { fontSize: 12, color: theme.colors.muted, paddingHorizontal: 16, paddingVertical: 6 },
+  fin: { fontSize: 12, color: theme.colors.muted, textAlign: 'center', marginVertical: 18 },
 });

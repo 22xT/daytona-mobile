@@ -1,19 +1,16 @@
-// app/venta/confirmacion.tsx — Venta registrada
-// Recibe los datos por parametros de ruta (clase 1: compartir datos entre
-// pantallas). Sin boton de volver: la venta ya esta hecha.
-
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { moneda } from '../../lib/api';
 import { theme } from '../../lib/theme';
 import { Pantalla, Tarjeta, Boton } from '../../components/ui';
+import { numeroComprobante } from '../../lib/formato';
 
 export default function Confirmacion() {
   const router = useRouter();
   const { id, total, descuento } = useLocalSearchParams<{ id: string; total: string; descuento: string }>();
 
-  const numero = String(id ?? '').padStart(8, '0');
+  const numero = numeroComprobante(id);
   const tieneDescuento = Number(descuento) > 0;
 
   return (
@@ -24,7 +21,7 @@ export default function Confirmacion() {
             <Ionicons name="checkmark" size={44} color="#fff" />
           </View>
           <Text style={estilos.titulo}>Venta registrada</Text>
-          <Text style={estilos.numero}>N° {numero}</Text>
+          <Text style={estilos.numero}>{numero}</Text>
 
           <View style={estilos.total}>
             <Text style={estilos.totalLabel}>TOTAL</Text>
@@ -34,13 +31,23 @@ export default function Confirmacion() {
             ) : null}
           </View>
 
-          <Text style={estilos.nota}>El stock se actualizó y el ingreso quedó en caja.</Text>
+          <Text style={estilos.nota}>El stock se actualizó y el cobro quedó registrado.</Text>
 
           <View style={{ height: 24 }} />
 
           <Boton onPress={() => router.replace('/venta')}>
             <Ionicons name="add-circle-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
             <Text style={estilos.btnTexto}>VENTA</Text>
+          </Boton>
+          <View style={{ height: 10 }} />
+          <Boton
+            variante="secundario"
+            onPress={() => router.push({
+              pathname: '/ventas/[id]',
+              params: { id: String(id ?? ''), total: String(total ?? ''), fecha: new Date().toISOString(), estado: 'Activa' },
+            })}
+          >
+            Ver comprobante
           </Boton>
           <View style={{ height: 10 }} />
           <Boton variante="secundario" onPress={() => router.replace('/ventas')}>Ver historial</Boton>

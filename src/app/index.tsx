@@ -1,9 +1,4 @@
-// app/index.tsx — Login
-// Formulario con TextInput y validacion (clase 2), boton con feedback
-// (clase 2), sesion en el store de Zustand (clase 4), navegacion con el
-// router (clase 1). Responsive: una columna en celular, dos en tablet.
-
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, Text,
   TextInput, TouchableOpacity, useWindowDimensions,
@@ -12,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from '../lib/api';
 import { useAuthStore } from '../lib/store/auth';
+import { leerSesion } from '../lib/sesionGuardada';
 import { theme } from '../lib/theme';
 import { Pantalla, Tarjeta, Titulo, Subtitulo, Etiqueta, CampoIcono, Boton, TextoError, Enlace } from '../components/ui';
 import { Marca } from '../components/Marca';
@@ -30,6 +26,21 @@ export default function Login() {
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
   const claveRef = useRef<TextInput>(null);
+  const [revisando, setRevisando] = useState(true);
+
+  useEffect(() => {
+    let activo = true;
+    leerSesion().then((s) => {
+      if (!activo) return;
+      if (s) {
+        login({ token: s.token, nombre: s.nombre, rol: s.rol });
+        router.replace('/venta');
+      } else {
+        setRevisando(false);
+      }
+    });
+    return () => { activo = false; };
+  }, []);
 
   const correoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim());
   const puedeEnviar = correoValido && clave.length > 0 && !cargando;
@@ -54,9 +65,7 @@ export default function Login() {
         return;
       }
 
-      login({ token: datos.Token, nombre: datos.Nombre ?? correo, rol: datos.Rol ?? null });
-      // TODO: "Recordarme" requiere persistencia segura (expo-secure-store).
-      // Por ahora la sesion vive mientras la app este abierta.
+      login({ token: datos.Token, nombre: datos.Nombre ?? correo, rol: datos.Rol ?? null }, recordar);
       router.replace('/venta');
     } catch {
       setError('No pudimos conectar con el servidor. Verificá tu conexión e intentá nuevamente.');
@@ -153,7 +162,8 @@ export default function Login() {
     </Tarjeta>
   );
 
-  // ---------- Tablet: dos zonas ----------
+  if (revisando) return <Pantalla />;
+
   if (dosColumnas) {
     return (
       <View style={estilos.split}>
@@ -175,7 +185,6 @@ export default function Login() {
     );
   }
 
-  // ---------- Celular: una columna ----------
   return (
     <Pantalla>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
@@ -202,7 +211,6 @@ const estilos = StyleSheet.create({
 
   split: { flex: 1, flexDirection: 'row' },
   lado: { flex: 1, backgroundColor: theme.colors.navy, justifyContent: 'center', overflow: 'hidden' },
-  // Franja diagonal roja muy tenue: referencia automotriz sin ruido
   ladoDecor: {
     position: 'absolute', right: -120, top: -80, width: 420, height: 900,
     backgroundColor: theme.colors.red, opacity: 0.06, transform: [{ rotate: '18deg' }],

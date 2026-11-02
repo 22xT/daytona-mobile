@@ -1,8 +1,5 @@
-// lib/store/auth.ts
-// Store de sesion con Zustand. El token vive aca y lo lee apiFetch.
-// Cualquier pantalla puede saber quien esta logueado sin pasar props.
-
 import { create } from 'zustand';
+import { borrarSesion, guardarSesion } from '../sesionGuardada';
 
 interface Sesion {
   token: string | null;
@@ -11,7 +8,7 @@ interface Sesion {
 }
 
 interface AuthStore extends Sesion {
-  login: (datos: Sesion) => void;
+  login: (datos: Sesion, recordar?: boolean) => void;
   logout: () => void;
   estaLogueado: () => boolean;
 }
@@ -21,9 +18,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   nombre: null,
   rol: null,
 
-  login: (datos) => set({ token: datos.token, nombre: datos.nombre, rol: datos.rol }),
+  login: (datos, recordar = false) => {
+    set({ token: datos.token, nombre: datos.nombre, rol: datos.rol });
+    if (recordar && datos.token) guardarSesion({ token: datos.token, nombre: datos.nombre, rol: datos.rol });
+  },
 
-  logout: () => set({ token: null, nombre: null, rol: null }),
+  logout: () => {
+    set({ token: null, nombre: null, rol: null });
+    borrarSesion();
+  },
 
   estaLogueado: () => !!get().token,
 }));

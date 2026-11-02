@@ -1,15 +1,8 @@
-// components/ui.tsx
-// Componentes de interfaz con styled-components (clase 1). Leen el tema del
-// ThemeProvider. Se extendieron para soportar iconos, mostrar/ocultar
-// contraseña, estados de foco y error, y boton con carga.
-
 import { useState, forwardRef } from 'react';
-import { ActivityIndicator, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleProp, TextInput, TextInputProps, TouchableOpacity, View, ViewStyle } from 'react-native';
 import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../lib/theme';
-
-/* ---------- Contenedores ---------- */
 
 export const Pantalla = styled.View`
   flex: 1;
@@ -28,8 +21,6 @@ export const Tarjeta = styled.View`
   shadow-offset: 0px 4px;
   elevation: 2;
 `;
-
-/* ---------- Textos ---------- */
 
 export const Titulo = styled.Text`
   font-size: ${(p) => p.theme.font.xxl}px;
@@ -65,8 +56,6 @@ export const Enlace = styled.Text`
   font-weight: 600;
 `;
 
-/* ---------- Campo simple (se conserva para pantallas que ya lo usan) ---------- */
-
 export const Campo = styled.TextInput`
   border-width: 1px;
   border-color: ${(p) => p.theme.colors.border};
@@ -77,12 +66,10 @@ export const Campo = styled.TextInput`
   color: ${(p) => p.theme.colors.text};
 `;
 
-/* ---------- Campo con icono, foco, error y ojo ---------- */
-
 interface CampoIconoProps extends TextInputProps {
   icono: keyof typeof Ionicons.glyphMap;
   error?: boolean;
-  esClave?: boolean;   // muestra el boton de ojo
+  esClave?: boolean;
 }
 
 const CampoContenedor = styled.View<{ enfocado: boolean; error: boolean }>`
@@ -106,7 +93,7 @@ export const CampoIcono = forwardRef<TextInput, CampoIconoProps>(function CampoI
   const [visible, setVisible] = useState(false);
 
   return (
-    <CampoContenedor enfocado={enfocado} error={error} style={style}>
+    <CampoContenedor enfocado={enfocado} error={error} style={style as StyleProp<ViewStyle>}>
       <Ionicons
         name={icono}
         size={20}
@@ -128,7 +115,6 @@ export const CampoIcono = forwardRef<TextInput, CampoIconoProps>(function CampoI
         }}
       />
       {esClave ? (
-        // Ancho fijo: el icono cambia pero el layout no se mueve
         <TouchableOpacity
           onPress={() => setVisible((v) => !v)}
           style={{ width: 44, height: 48, alignItems: 'center', justifyContent: 'center' }}
@@ -144,8 +130,6 @@ export const CampoIcono = forwardRef<TextInput, CampoIconoProps>(function CampoI
     </CampoContenedor>
   );
 });
-
-/* ---------- Boton ---------- */
 
 type Variante = 'primario' | 'secundario' | 'peligro';
 

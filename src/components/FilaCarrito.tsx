@@ -1,6 +1,3 @@
-// components/FilaCarrito.tsx
-// Un item del carrito con los botones de cantidad.
-
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../lib/theme';

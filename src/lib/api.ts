@@ -1,29 +1,22 @@
-// lib/api.ts
-// La direccion del backend se deduce sola: Metro sabe desde que host esta
-// sirviendo la app (localhost en web, la IP de la PC en el celular), y la
-// API vive en esa misma maquina en el puerto 52954. Asi funciona en web y
-// en el celular sin tocar nada, y si cambia el WiFi se adapta solo.
-
 import Constants from 'expo-constants';
 import { useAuthStore } from './store/auth';
 
 const PUERTO_API = 52954;
 
 function resolverApiBase(): string {
-  // hostUri viene como "192.168.0.70:8081" o "localhost:8081"
+  const desdeEnv = process.env.EXPO_PUBLIC_API_URL;
+  if (desdeEnv) return desdeEnv.endsWith('/') ? desdeEnv : desdeEnv + '/';
+
   const hostUri = Constants.expoConfig?.hostUri;
   if (hostUri) {
     const host = hostUri.split(':')[0];
     return `http://${host}:${PUERTO_API}/api/`;
   }
-  // Sin Metro (build de produccion): valor fijo, cambiar al publicar
-  return 'http://localhost:52954/api/';
+  return `http://localhost:${PUERTO_API}/api/`;
 }
 
 export const API_BASE = resolverApiBase();
 
-// Envuelve fetch agregando el token de sesion. Todas las llamadas a la
-// API salvo el login pasan por aca.
 export async function apiFetch<T>(ruta: string, opciones: RequestInit = {}): Promise<T> {
   const token = useAuthStore.getState().token;
 
@@ -45,7 +38,7 @@ export async function apiFetch<T>(ruta: string, opciones: RequestInit = {}): Pro
     try {
       const cuerpo = await respuesta.json();
       mensaje = cuerpo.Message || cuerpo.message || mensaje;
-    } catch { /* sin cuerpo */ }
+    } catch {}
     throw new Error(mensaje);
   }
 
@@ -53,7 +46,6 @@ export async function apiFetch<T>(ruta: string, opciones: RequestInit = {}): Pro
   return (texto ? JSON.parse(texto) : null) as T;
 }
 
-// Formato argentino: $1.234,56
 export function moneda(valor: number | string | null | undefined): string {
   const n = Number(valor ?? 0);
   if (isNaN(n)) return '$0,00';

@@ -1,6 +1,3 @@
-// lib/tipos.ts
-// Formas de lo que devuelve la API, para que TypeScript ayude.
-
 export interface RepuestoPropio {
   Id: number;
   Codigo: string;
@@ -18,8 +15,6 @@ export interface RepuestoPropio {
   MejorProveedor: string | null;
 }
 
-// La API devuelve un DataSet: puede venir como array de tablas o como
-// objeto con Table / Table1 segun la version. Se contemplan las dos.
 export function partirDataSet<T>(ds: unknown): T[] {
   if (Array.isArray(ds)) return (ds[0] as T[]) ?? [];
   const o = ds as { Table?: T[] };

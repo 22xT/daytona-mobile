@@ -1,9 +1,3 @@
-// lib/store/carrito.ts
-// El carrito de venta en Zustand (clase 4). Tres pantallas lo usan:
-// el buscador agrega y muestra el badge, la pantalla de carrito edita,
-// la confirmacion lo vacia. Sin un store global habria que pasar el
-// carrito por props entre pantallas que ni siquiera son padre e hijo.
-
 import { create } from 'zustand';
 
 export interface ItemCarrito {
@@ -16,7 +10,6 @@ export interface ItemCarrito {
 }
 
 function nuevoToken(): string {
-  // crypto.randomUUID existe en web y en RN moderno; fallback por las dudas
   const c = (globalThis as any).crypto;
   if (c?.randomUUID) return c.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
@@ -27,8 +20,6 @@ function nuevoToken(): string {
 
 interface CarritoStore {
   items: ItemCarrito[];
-  // Token unico de la operacion en curso. Se manda con la venta: si el
-  // POST se repite, el servidor devuelve la misma venta en vez de crear otra.
   tokenOperacion: string;
 
   agregar: (item: Omit<ItemCarrito, 'Cantidad'>) => { ok: boolean; motivo?: string };
@@ -36,7 +27,6 @@ interface CarritoStore {
   cambiarCantidad: (idRepuesto: number, cantidad: number) => { ok: boolean; motivo?: string };
   vaciar: () => void;
 
-  // Selectores: se calculan al vuelo, no se guardan
   cantidadItems: () => number;
   subtotal: () => number;
 }
@@ -49,7 +39,6 @@ export const useCarritoStore = create<CarritoStore>((set, get) => ({
     const existente = get().items.find((i) => i.IdRepuesto === item.IdRepuesto);
 
     if (existente) {
-      // Ya esta: suma uno, respetando el stock
       if (existente.Cantidad + 1 > existente.StockDisponible)
         return { ok: false, motivo: `Solo hay ${existente.StockDisponible} en stock.` };
       set({
@@ -87,7 +76,6 @@ export const useCarritoStore = create<CarritoStore>((set, get) => ({
     return { ok: true };
   },
 
-  // Al vaciar nace un token nuevo: la proxima venta es otra operacion
   vaciar: () => set({ items: [], tokenOperacion: nuevoToken() }),
 
   cantidadItems: () => get().items.reduce((s, i) => s + i.Cantidad, 0),

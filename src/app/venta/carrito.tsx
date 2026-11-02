@@ -1,8 +1,3 @@
-// app/venta/carrito.tsx — Carrito
-// FlatList con los items del store de Zustand (clase 2 + 4), selector de
-// tipo de cliente, botones de descuento que vienen de la API con useQuery
-// (clase 4), total calculado, y el boton de confirmar.
-
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -16,8 +11,8 @@ import { useSesion } from '../../lib/useSesion';
 import { FilaCarrito } from '../../components/FilaCarrito';
 
 interface ParametrosVenta {
-  DescuentosPublico: string;   // "5,7,10"
-  DescuentoMecanico: string;   // "10"
+  DescuentosPublico: string;
+  DescuentoMecanico: string;
 }
 
 function avisar(titulo: string, mensaje: string) {
@@ -39,8 +34,6 @@ export default function Carrito() {
   const setTipoCliente = useVentaStore((s) => s.setTipoCliente);
   const setDescuento = useVentaStore((s) => s.setDescuento);
 
-  // Los escalones de descuento son configuracion del negocio: se leen de la
-  // API y quedan en cache. Si falla, se usan los valores por defecto.
   const { data: params } = useQuery({
     queryKey: ['parametros-venta'],
     queryFn: () => apiFetch<ParametrosVenta>('Configuracion/Venta'),
@@ -60,8 +53,6 @@ export default function Carrito() {
 
   function elegirTipo(t: TipoCliente) {
     setTipoCliente(t);
-    // Al mecanico le corresponde su descuento fijo; al publico ninguno
-    // salvo que lo pida. Igual que en el sistema web.
     setDescuento(t === 'Mecanico' ? descuentoMecanico : 0);
   }
 
@@ -114,7 +105,6 @@ export default function Carrito() {
         contentContainerStyle={{ paddingBottom: 12 }}
       />
 
-      {/* Panel inferior: tipo de cliente, descuento, total, confirmar */}
       <View style={estilos.panel}>
         <View style={estilos.linea}>
           <Text style={estilos.lineaLabel}>CLIENTE</Text>
